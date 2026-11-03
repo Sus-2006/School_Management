@@ -1,0 +1,395 @@
+// use prisma-8
+
+enum Role {
+  ADMIN
+  TEACHER
+  PARENT
+  STUDENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  LEAVE
+}
+
+enum TransportRequired {
+  YES
+  NO
+}
+
+enum FeeStatus {
+  PENDING
+  PARTIAL
+  PAID
+}
+
+model User {
+  id          String   @id @onCreate(uuid())
+  firebaseUid String   @unique
+  loginId     String   @unique
+  email       String?  @unique
+  role        Role
+  linkedId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @onCreate(now()) @onUpdate(now())
+
+  student     Student?
+  parent      Parent?
+  teacher     Teacher?
+
+  notifications Notification[]
+}
+
+model Parent {
+  id         String   @id @onCreate(uuid())
+  userId     String?  @unique
+  fatherName String
+  motherName String
+  phone      String
+  email      String?
+  address    String?
+
+  user     User?     @relation(fields: [userId], references: [id])
+  students Student[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}
+
+model Teacher {
+  id         String   @id @onCreate(uuid())
+  userId     String?  @unique
+  employeeId String   @unique
+  firstName  String
+  lastName   String
+  phone      String?
+  email      String?
+  photoUrl   String?
+
+  user User? @relation(fields: [userId], references: [id])
+
+  timetable Timetable[]
+  homework  Homework[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}
+
+model Class {
+  id       String @id @onCreate(uuid())
+  name     String
+  grade    Int
+  sections Section[]
+
+  subjects   ClassSubject[]
+  timetable  Timetable[]
+  homework   Homework[]
+  students   Student[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+
+  @@unique([grade, name])
+}
+
+model Section {
+  id       String @id @onCreate(uuid())
+  name     String
+  classId  String
+
+  class    Class     @relation(fields: [classId], references: [id])
+  students Student[]
+
+  @@unique([classId, name])
+}
+
+model Subject {
+  id       String @id @onCreate(uuid())
+  name     String
+  code     String? @unique
+
+  classes   ClassSubject[]
+  timetable Timetable[]
+  homework  Homework[]
+  marks     Mark[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}
+
+model ClassSubject {
+  id        String @id @onCreate(uuid())
+  classId   String
+  subjectId String
+
+  class   Class   @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([classId, subjectId])
+}
+
+model Student {
+  id            String   @id @onCreate(uuid())
+  userId        String?  @unique
+  admissionNo   String   @unique
+  name          String
+  dob           DateTime?
+  gender        Gender?
+  bloodGroup    String?
+  photoUrl      String?
+  rollNo        Int?
+  classId       String
+  sectionId     String
+  parentId      String
+
+  transportRequired TransportRequired @default(NO)
+
+  user      User?     @relation(fields: [userId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+  section   Section  @relation(fields: [sectionId], references: [id])
+  parent    Parent   @relation(fields: [parentId], references: [id])
+
+  attendance Attendance[]
+  marks      Mark[]
+  fees       StudentFee[]
+  transport  StudentTransport[]
+  notices    NoticeRecipient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+
+  @@index([classId])
+  @@index([sectionId])
+  @@index([parentId])
+}
+
+model Timetable {
+  id        String @id @onCreate(uuid())
+  classId   String
+  subjectId String
+  teacherId String
+  day       String
+  period    Int
+  startTime String?
+  endTime   String?
+
+  class   Class   @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+
+  @@unique([classId, day, period])
+}
+
+model Attendance {
+  id        String           @id @onCreate(uuid())
+  studentId String
+  date      DateTime
+  status    AttendanceStatus
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+
+  @@unique([studentId, date])
+  @@index([date])
+}
+
+model Exam {
+  id        String   @id @onCreate(uuid())
+  name      String
+  examDate  DateTime?
+  createdAt DateTime @default(now())
+
+  marks Mark[]
+}
+
+model Mark {
+  id        String @id @onCreate(uuid())
+  studentId String
+  subjectId String
+  examId    String
+  marks     Float
+  maxMarks  Float   @default(100)
+
+  student Student @relation(fields: [studentId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  exam    Exam    @relation(fields: [examId], references: [id])
+
+  @@unique([studentId, subjectId, examId])
+}
+
+model Homework {
+  id        String   @id @onCreate(uuid())
+  classId   String
+  subjectId String
+  teacherId String
+  title     String
+  description String?
+  dueDate   DateTime
+  attachmentUrl String?
+
+  class   Class   @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+
+  @@index([classId])
+  @@index([dueDate])
+}
+
+model Driver {
+  id        String @id @onCreate(uuid())
+  name      String
+  phone     String
+  licenseNo String? @unique
+
+  buses Bus[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}
+
+model Bus {
+  id             String @id @onCreate(uuid())
+  busNumber      String @unique
+  registrationNo String @unique
+  capacity       Int
+  driverId       String?
+  attendantName  String?
+  attendantPhone String?
+
+  driver     Driver? @relation(fields: [driverId], references: [id])
+  routes     Route[]
+  transports StudentTransport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}
+
+model Route {
+  id        String @id @onCreate(uuid())
+  name      String
+  busId     String?
+
+  bus   Bus?   @relation(fields: [busId], references: [id])
+  stops Stop[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}
+
+model Stop {
+  id         String @id @onCreate(uuid())
+  routeId    String
+  name       String
+  stopOrder  Int
+  pickupTime String?
+  dropTime   String?
+
+  route       Route              @relation(fields: [routeId], references: [id])
+  transports  StudentTransport[]
+
+  @@unique([routeId, stopOrder])
+}
+
+model StudentTransport {
+  id        String   @id @onCreate(uuid())
+  studentId String
+  busId     String
+  routeId   String
+  stopId    String
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  active    Boolean  @default(true)
+
+  student Student @relation(fields: [studentId], references: [id])
+  bus     Bus     @relation(fields: [busId], references: [id])
+  stop    Stop    @relation(fields: [stopId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+
+  @@index([busId])
+  @@index([routeId])
+  @@index([stopId])
+  @@index([studentId, active])
+}
+
+model FeeStructure {
+  id          String @id @onCreate(uuid())
+  name        String
+  amount      Float
+  description String?
+
+  studentFees StudentFee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}
+
+model StudentFee {
+  id              String    @id @onCreate(uuid())
+  studentId       String
+  feeStructureId  String
+  totalAmount     Float
+  paidAmount      Float      @default(0)
+  balance         Float
+  dueDate         DateTime?
+  status          FeeStatus  @default(PENDING)
+
+  student       Student      @relation(fields: [studentId], references: [id])
+  feeStructure  FeeStructure @relation(fields: [feeStructureId], references: [id])
+
+  createdAt DateTime @onCreate(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+
+  @@unique([studentId, feeStructureId])
+}
+
+model Notice {
+  id          String   @id @onCreate(uuid())
+  title       String
+  content     String
+  audience    String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @onCreate(now()) @onUpdate(now())
+
+  recipients NoticeRecipient[]
+}
+
+model NoticeRecipient {
+  id        String @id @onCreate(uuid())
+  noticeId  String
+  studentId String
+
+  notice  Notice  @relation(fields: [noticeId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([noticeId, studentId])
+}
+
+model Notification {
+  id        String   @id @onCreate(uuid())
+  userId    String
+  title     String
+  body      String
+  type      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+}

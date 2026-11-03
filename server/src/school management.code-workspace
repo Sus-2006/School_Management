@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../../../Desktop/drone_mini/1st_drone"
+		},
+		{
+			"name": "MOtor driver custom",
+			"path": "../../../OneDrive/Documents/PlatformIO/Projects/MOtor driver custom"
+		},
+		{
+			"name": "DRV8833_motor_test1",
+			"path": "../../../OneDrive/Documents/PlatformIO/Projects/DRV8833_motor_test1"
+		}
+	],
+	"settings": {}
+}
