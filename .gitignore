@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+**/firebase-service-account.json
+
+# Build output
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+
+# Android / Gradle
+.gradle/
+**/.gradle/
+*.apk
+*.aab
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+
+# AI/editor agent files
+server/.agents/
+server/.claude/
+server/.cursor/
+
+server/.devin/
+server/.agents/
+server/.claude/
+server/.cursor/
+server/.devin/
